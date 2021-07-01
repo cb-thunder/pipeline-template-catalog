@@ -45,7 +45,26 @@ pipeline {
           echo "${JOB_NAME} pipeline job is awaiting approval at: ${RUN_DISPLAY_URL}"
         }
       }
-    }  
+    }
+    stage("Trigger CD release") {
+        agent any
+        steps {
+            script {
+                node() {
+                    checkout scm
+                    env.VERSION = readFile 'version.txt'
+                    env.VERSION = env.VERSION.trim()
+                    imageTag = env.VERSION
+                    echo "Branch name: ${env.BRANCH_NAME}"
+                    if(env.BRANCH_NAME == 'development'){
+                      cloudBeesFlowTriggerRelease configuration: 'SDA-RO', parameters: '{"release":{"releaseName":"The Release","stages":[],"pipelineName":"The Release","parameters":[]}}', projectName: 'Blog', releaseName: 'The Release', startingStage: 'Release Readiness'                    }
+                    if(env.BRANCH_NAME.matches("[A-Z]+-[0-9]+")){ // Run CD pipelines on feature branch creation, assuming branch name = Jira ticket
+                      cloudBeesFlowRunPipeline parameters: '{"pipeline":{"pipelineName":"Backend", "parameters":[]}}', projectName: 'Blog', pipelineName: 'Backend', configuration: 'SDA-RO'
+                    }
+
+                }
+            }
+        }
+    }
   }
 }
-
