@@ -10,38 +10,75 @@ pipeline {
   environment {
     repoOwner = "${repoOwner}"
     credId = "${githubCredentialId}"
+    sonarOrg = "cb-stubs-sandbox"
+    sonarProject = "microblog-js"
   }
   stages('VueJS Test and Build')
   {
-    stage('VueJS Tests') {
+    stage('Kick off Test and Scan') {
       agent {
         kubernetes {
           label 'nodejs'
           yaml testPodYaml
        }
       }
-      steps {
-            checkout scm           
-            container('nodejs') {
-              sh '''
-                 yarn install
-                 yarn test:unit
-                 '''
-            }
+      stages {
+        stage('VueJS Test'){
+           steps {
+                checkout scm           
+                container('nodejs') {
+                   sh '''
+                     yarn install
+                     yarn test:unit --ci --reporters=default --reporters=jest-junit
+                     ls output/coverage/junit/
+                   '''     
+                  junit 'output/coverage/junit/junit.xml'
+                }
+          }
+        }
+        stage('Sonar Scan') {
+          steps {
+              container('nodejs') {
+                  script{
+                    scannerHome = tool 'SonarScanner';
+                  }
+                    withSonarQubeEnv('stubs-sonar') {
+                      // This expands the evironment variables SONAR_CONFIG_NAME, SONAR_HOST_URL, SONAR_AUTH_TOKEN that can be used by any script.
+                      sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=$sonarProject -Dsonar.host.url=https://sonar.uscis.cb-demos.io/ -Dsonar.login=${env.SONAR_AUTH_TOKEN}"
+                    }
+                }    
+              }
+        }
       } 
     }
     stage('Build and Push Image') {
-      when {
-        beforeAgent true
-        branch 'master'
-      }
       steps { 
         kanikoBuildPushGeneric("microblog-frontend", "latest", "${gcpProject}/${repoOwner}")
         {
           checkout scm
         }
       }
-    } 
+    }
+    stage("Trigger CD release") {
+        agent any
+        steps {
+            script {
+                node() {
+                    checkout scm
+                    env.VERSION = readFile 'version.txt'
+                    env.VERSION = env.VERSION.trim()
+                    imageTag = env.VERSION
+                    echo "Branch name: ${env.BRANCH_NAME}"
+                    if(env.BRANCH_NAME == 'development'){
+                      cloudBeesFlowTriggerRelease configuration: 'SDA-RO', parameters: '{"release":{"releaseName":"The Release","stages":[],"pipelineName":"The Release","parameters":[]}}', projectName: 'Blog', releaseName: 'The Release', startingStage: 'Release Readiness'                    }
+                    if(env.BRANCH_NAME.matches("[A-Z]+-[0-9]+")){ // Run CD pipelines on feature branch creation, assuming branch name = Jira ticket
+                      cloudBeesFlowRunPipeline parameters: '{"pipeline":{"pipelineName":"Frontend", "parameters":[]}}', projectName: 'Blog', pipelineName: 'Frontend', configuration: 'SDA-RO'
+                    }
+
+                }
+            }
+        }
+    }
   }
 }
 
