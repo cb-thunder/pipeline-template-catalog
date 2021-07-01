@@ -72,7 +72,7 @@ pipeline {
                     if(env.BRANCH_NAME == 'development'){
                       cloudBeesFlowTriggerRelease configuration: 'Thunder', parameters: '{"release":{"releaseName":"The Release","stages":[],"pipelineName":"The Release","parameters":[]}}', projectName: 'Blog', releaseName: 'The Release', startingStage: 'Release Readiness'                    }
                     if(env.BRANCH_NAME.matches("[A-Z]+-[0-9]+")){ // Run CD pipelines on feature branch creation, assuming branch name = Jira ticket
-                      cloudBeesFlowRunPipeline parameters: '{"pipeline":{"pipelineName":"Frontend", "parameters":[]}}', projectName: 'Blog', pipelineName: 'Frontend', configuration: 'SDA-RO'
+                      cloudBeesFlowRunPipeline parameters: '{"pipeline":{"pipelineName":"Frontend", "parameters":[]}}', projectName: 'Blog', pipelineName: 'Frontend', configuration: 'Thunder'
                     }
 
                 }
