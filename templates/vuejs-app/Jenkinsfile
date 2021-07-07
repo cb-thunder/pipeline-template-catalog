@@ -36,6 +36,7 @@ pipeline {
                 }
           }
         }
+        /*
         stage('Sonar Scan') {
           steps {
               container('nodejs') {
@@ -49,6 +50,7 @@ pipeline {
                 }    
               }
         }
+        */
       } 
     }
     stage('Build and Push Image') {
