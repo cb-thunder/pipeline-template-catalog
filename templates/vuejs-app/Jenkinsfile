@@ -10,7 +10,7 @@ pipeline {
   environment {
     repoOwner = "${repoOwner}"
     credId = "${githubCredentialId}"
-    sonarOrg = "cb-stubs-sandbox"
+    sonarOrg = "cb-thunder"
     sonarProject = "microblog-js"
   }
   stages('VueJS Test and Build')
@@ -44,7 +44,7 @@ pipeline {
                   }
                     withSonarQubeEnv('stubs-sonar') {
                       // This expands the evironment variables SONAR_CONFIG_NAME, SONAR_HOST_URL, SONAR_AUTH_TOKEN that can be used by any script.
-                      sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=$sonarProject -Dsonar.host.url=https://sonar.uscis.cb-demos.io/ -Dsonar.login=${env.SONAR_AUTH_TOKEN}"
+                      sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=$sonarProject -Dsonar.host.url=https://sonarqube.cb-demos.io/ -Dsonar.login=${env.SONAR_AUTH_TOKEN}"
                     }
                 }    
               }
