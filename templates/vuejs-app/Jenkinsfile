@@ -42,7 +42,7 @@ pipeline {
                   script{
                     scannerHome = tool 'SonarScanner';
                   }
-                    withSonarQubeEnv('stubs-sonar') {
+                    withSonarQubeEnv('SonarScanner') {
                       // This expands the evironment variables SONAR_CONFIG_NAME, SONAR_HOST_URL, SONAR_AUTH_TOKEN that can be used by any script.
                       sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=$sonarProject -Dsonar.host.url=https://sonarqube.cb-demos.io/ -Dsonar.login=${env.SONAR_AUTH_TOKEN}"
                     }
